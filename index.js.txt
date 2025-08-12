@@ -4,25 +4,29 @@ import fetch from "node-fetch";
 const app = express();
 app.use(express.json());
 
+// ⚠️ Cambia esto por tu API Key real de currencyapi.com
+const API_KEY = "cur_live_ss4MG3d0hyMN12wjZkfypRNdKetkNRIXGEOl3G3y";
+
 app.post("/tasa", async (req, res) => {
   try {
-    // Obtener tasa BCV
-    const resp = await fetch("https://pydolarvenezuela-api.vercel.app/api/v1/dollar");
+    // 1. Obtener la tasa USD -> VES desde currencyapi
+    const resp = await fetch(`https://api.currencyapi.com/v3/latest?apikey=${API_KEY}&currencies=VES&base_currency=USD`);
     const data = await resp.json();
 
-    const tasaBCV = data.monitors.bcv.price;
+    const tasaVES = data.data.VES.value;
 
-    // Datos que envía Builderbot
+    // 2. Recibir el total USD desde Builderbot
     const { totalUSD } = req.body;
 
-    // Calcular en Bs
-    const totalBs = totalUSD * tasaBCV;
+    // 3. Calcular el total en bolívares
+    const totalBs = totalUSD * tasaVES;
 
+    // 4. Responder al bot
     res.json({
-      tasa_bcv: tasaBCV.toFixed(2),
+      tasa_bcv: tasaVES.toFixed(2),
       total_usd: totalUSD.toFixed(2),
       total_bs: totalBs.toFixed(2),
-      mensaje: `Total: $${totalUSD.toFixed(2)} | Bs. ${totalBs.toFixed(2)} (Tasa BCV: ${tasaBCV.toFixed(2)})`
+      mensaje: `Total: $${totalUSD.toFixed(2)} | Bs. ${totalBs.toFixed(2)} (Tasa: ${tasaVES.toFixed(2)})`
     });
 
   } catch (error) {
@@ -34,3 +38,4 @@ app.post("/tasa", async (req, res) => {
 app.listen(3000, () => {
   console.log("Servidor webhook escuchando en puerto 3000");
 });
+
